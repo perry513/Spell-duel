@@ -1,3 +1,4 @@
+import { Globe } from 'lucide-react'
 import { winners } from '../game/engine'
 import type { GameState } from '../game/types'
 
@@ -29,6 +30,7 @@ export const GameOver = ({ state, onPlayAgain }: Props) => {
         rel="noopener noreferrer"
         target="_blank"
       >
+        <Globe aria-hidden="true" size={16} strokeWidth={2} />
         Search meaning on Google
       </a>
       {solver && (

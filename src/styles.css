@@ -738,6 +738,9 @@ body {
 
 .gameover__meaning-link {
   width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--accent);
   font-size: 0.9rem;
   font-weight: 600;

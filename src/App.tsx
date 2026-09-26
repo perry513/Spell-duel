@@ -14,7 +14,7 @@ import {
   type SavedScores,
 } from './game/scores'
 import type { GuessOutcome } from './game/types'
-import type { ThemeId } from './theme'
+import { readSavedTheme, writeSavedTheme } from './theme'
 
 const outcomeMessage = (outcome: GuessOutcome, playerName: string): string => {
   switch (outcome.kind) {
@@ -37,13 +37,14 @@ const App = () => {
   const [state, dispatch] = useReducer(gameReducer, IDLE_STATE)
   const [roster, setRoster] = useState<string[]>(['', ''])
   const [savedScores, setSavedScores] = useState<SavedScores>(readSavedScores)
-  const [theme, setTheme] = useState<ThemeId>('candy-pop')
+  const [theme, setTheme] = useState(readSavedTheme)
   const [solving, setSolving] = useState(false)
   const [revealing, setRevealing] = useState(false)
   const [solveGuess, setSolveGuess] = useState('')
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
+    writeSavedTheme(theme)
   }, [theme])
 
   useEffect(() => {
