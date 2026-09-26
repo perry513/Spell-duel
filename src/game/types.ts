@@ -34,6 +34,7 @@ export type GuessOutcome =
   | { kind: 'miss'; letter: string }
   | { kind: 'rejected'; letter: string; reason: 'already-guessed' }
   | { kind: 'solved'; points: number }
+  | { kind: 'revealed' }
   | { kind: 'solve-failed' }
 
 export const SOLVE_BONUS = 5

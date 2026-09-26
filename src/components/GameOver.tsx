@@ -11,6 +11,8 @@ export const GameOver = ({ state, onPlayAgain }: Props) => {
   const ranked = [...state.players].sort((a, b) => b.score - a.score)
   const solver =
     state.solvedBy === null ? null : state.players[state.solvedBy]
+  const meaningSearch = new URL('https://www.google.com/search')
+  meaningSearch.searchParams.set('q', `define ${state.phrase}`)
 
   return (
     <div className="panel gameover">
@@ -21,8 +23,19 @@ export const GameOver = ({ state, onPlayAgain }: Props) => {
       </h2>
 
       <p className="gameover__phrase">{state.phrase}</p>
+      <a
+        className="gameover__meaning-link"
+        href={meaningSearch.toString()}
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        Search meaning on Google
+      </a>
       {solver && (
         <p className="gameover__solver">Solved by {solver.name}</p>
+      )}
+      {state.lastOutcome?.kind === 'revealed' && (
+        <p className="gameover__solver">Phrase revealed. No points awarded.</p>
       )}
 
       <ol className="standings">

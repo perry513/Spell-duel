@@ -44,13 +44,13 @@ export const winners = (players: Player[]): Player[] => {
   return players.filter((player) => player.score === top)
 }
 
-export const createPlayers = (names: string[]): Player[] =>
+export const createPlayers = (names: string[], scores: number[] = []): Player[] =>
   names
     .slice(0, MAX_PLAYERS)
     .map((name, index) => ({
       id: index,
       name: name.trim() || `Player ${index + 1}`,
-      score: 0,
+      score: scores[index] ?? 0,
     }))
 
 export const validatePhrase = (phrase: string): string | null => {
@@ -70,6 +70,7 @@ export type CreateGameInput = {
   phrase: string
   category: string
   names: string[]
+  scores?: number[]
   rng?: Rng
 }
 
@@ -77,6 +78,7 @@ export const createGame = ({
   phrase,
   category,
   names,
+  scores,
   rng = Math.random,
 }: CreateGameInput): GameState => {
   const slots = toSlots(phrase)
@@ -97,7 +99,7 @@ export const createGame = ({
     phrase,
     category,
     slots,
-    players: createPlayers(names),
+    players: createPlayers(names, scores),
     activePlayerIndex: 0,
     guessedLetters,
     solvedBy: null,
@@ -176,5 +178,16 @@ export const attemptSolve = (state: GameState, guess: string): GameState => {
     phase: 'over',
     solvedBy: state.activePlayerIndex,
     lastOutcome: { kind: 'solved', points },
+  }
+}
+
+export const revealPhrase = (state: GameState): GameState => {
+  if (state.phase !== 'playing') return state
+
+  return {
+    ...state,
+    slots: state.slots.map((slot) => ({ ...slot, revealed: true })),
+    phase: 'over',
+    lastOutcome: { kind: 'revealed' },
   }
 }

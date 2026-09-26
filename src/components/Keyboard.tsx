@@ -13,6 +13,7 @@ type Props = {
   guessedLetters: Record<string, LetterState>
   disabled: boolean
   onGuess: (letter: string) => void
+  onReveal: () => void
   onSolve: () => void
 }
 
@@ -20,6 +21,7 @@ export const Keyboard = ({
   guessedLetters,
   disabled,
   onGuess,
+  onReveal,
   onSolve,
 }: Props) => {
   useEffect(() => {
@@ -64,14 +66,24 @@ export const Keyboard = ({
           })}
         </div>
       ))}
-      <button
-        className="btn btn--solve"
-        disabled={disabled}
-        onClick={onSolve}
-        type="button"
-      >
-        Solve the phrase
-      </button>
+      <div className="keyboard__actions">
+        <button
+          className="btn btn--solve"
+          disabled={disabled}
+          onClick={onSolve}
+          type="button"
+        >
+          Solve the phrase
+        </button>
+        <button
+          className="btn btn--reveal"
+          disabled={disabled}
+          onClick={onReveal}
+          type="button"
+        >
+          Reveal the phrase
+        </button>
+      </div>
     </section>
   )
 }

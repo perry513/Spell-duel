@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { attemptSolve, createGame, guessLetter, winners } from './engine'
+import {
+  attemptSolve,
+  createGame,
+  guessLetter,
+  revealPhrase,
+  winners,
+} from './engine'
 import { SOLVE_BONUS, type GameState } from './types'
 
 /** Deterministic RNG so the opening reveal is always the first distinct letter. */
@@ -33,6 +39,18 @@ describe('createGame', () => {
 
     expect(state.players).toHaveLength(6)
     expect(state.players[0].name).toBe('Player 1')
+  })
+
+  it('starts players with persisted scores when provided', () => {
+    const state = createGame({
+      phrase: 'HELLO WORLD',
+      category: 'Test',
+      names: ['Ann', 'Bob'],
+      scores: [7, 3],
+      rng: firstLetter,
+    })
+
+    expect(state.players.map((player) => player.score)).toEqual([7, 3])
   })
 })
 
@@ -102,6 +120,19 @@ describe('attemptSolve', () => {
     expect(state.phase).toBe('playing')
     expect(state.players[0].score).toBe(0)
     expect(state.activePlayerIndex).toBe(1)
+  })
+})
+
+describe('revealPhrase', () => {
+  it('reveals every slot and ends without changing scores', () => {
+    const start = guessLetter(newGame('BANANA SPLIT'), 'A')
+    const state = revealPhrase(start)
+
+    expect(state.phase).toBe('over')
+    expect(state.slots.every((slot) => slot.revealed)).toBe(true)
+    expect(state.players).toEqual(start.players)
+    expect(state.solvedBy).toBeNull()
+    expect(state.lastOutcome).toEqual({ kind: 'revealed' })
   })
 })
 
