@@ -121,8 +121,10 @@ export const Setup = ({ initialNames, onStart }: Props) => {
               aria-label="Custom phrase"
               autoComplete="new-password"
               className="input"
+              lang="en"
               onChange={(event) => setManualPhrase(event.target.value)}
               placeholder="Type a word or phrase"
+              spellCheck={showPhrase}
               type={showPhrase ? 'text' : 'password'}
               value={manualPhrase}
             />
