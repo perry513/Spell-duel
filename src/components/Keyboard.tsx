@@ -1,0 +1,77 @@
+import { useEffect } from 'react'
+import type { LetterState } from '../game/types'
+
+const ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM']
+
+const MARK: Record<LetterState, string> = {
+  unused: '',
+  hit: '✓',
+  miss: '✕',
+}
+
+type Props = {
+  guessedLetters: Record<string, LetterState>
+  disabled: boolean
+  onGuess: (letter: string) => void
+  onSolve: () => void
+}
+
+export const Keyboard = ({
+  guessedLetters,
+  disabled,
+  onGuess,
+  onSolve,
+}: Props) => {
+  useEffect(() => {
+    if (disabled) return
+
+    const handler = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return
+      const target = event.target as HTMLElement | null
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return
+
+      const letter = event.key.toUpperCase()
+      if (/^[A-Z]$/.test(letter)) onGuess(letter)
+    }
+
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [disabled, onGuess])
+
+  return (
+    <section className="keyboard" aria-label="Letter keyboard">
+      {ROWS.map((row) => (
+        <div className="keyboard__row" key={row}>
+          {[...row].map((letter) => {
+            const state = guessedLetters[letter] ?? 'unused'
+            const used = state !== 'unused'
+            return (
+              <button
+                aria-disabled={used || disabled}
+                aria-label={`${letter}${used ? `, ${state}` : ''}`}
+                className={`key key--${state}`}
+                disabled={used || disabled}
+                key={letter}
+                onClick={() => onGuess(letter)}
+                type="button"
+              >
+                <span className="key__letter">{letter}</span>
+                <span className="key__mark" aria-hidden="true">
+                  {MARK[state]}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      ))}
+      <button
+        className="btn btn--solve"
+        disabled={disabled}
+        onClick={onSolve}
+        type="button"
+      >
+        Solve the phrase
+      </button>
+    </section>
+  )
+}
