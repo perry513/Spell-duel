@@ -39,7 +39,7 @@ correct guess, so they are usually easier, not harder.
 
 ```bash
 npm install
-npm run dev             # dev server at /spell-duel/
+npm run dev             # dev server at /Spell-duel/
 npm test                # engine and difficulty tests
 npm run build           # type-check and bundle
 npm run build:wordbank  # regenerate the word bank (needs network)
@@ -75,5 +75,5 @@ Word data is downloaded at build time and redistributed in the generated bank:
 ## Deployment
 
 Pushing to `main` builds and publishes to GitHub Pages via
-`.github/workflows/deploy.yml`. The Vite `base` is `/spell-duel/`; change it in
+`.github/workflows/deploy.yml`. The Vite `base` is `/Spell-duel/`; change it in
 `vite.config.ts` if the repository is renamed.
