@@ -1,4 +1,10 @@
-import { attemptSolve, createGame, guessLetter, revealPhrase } from './engine'
+import {
+  attemptSolve,
+  createGame,
+  guessLetter,
+  revealPhrase,
+  undoLastMove,
+} from './engine'
 import type { GameState } from './types'
 
 export const IDLE_STATE: GameState = {
@@ -11,6 +17,7 @@ export const IDLE_STATE: GameState = {
   guessedLetters: {},
   solvedBy: null,
   lastOutcome: null,
+  history: [],
 }
 
 export type GameAction =
@@ -20,10 +27,13 @@ export type GameAction =
       category: string
       names: string[]
       scores?: number[]
+      colors?: string[]
+      startingPlayerIndex?: number
     }
   | { type: 'guess'; letter: string }
   | { type: 'solve'; guess: string }
   | { type: 'reveal' }
+  | { type: 'undo' }
   | { type: 'clearScores' }
   | { type: 'clearOutcome' }
   | { type: 'reset' }
@@ -36,6 +46,8 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
         category: action.category,
         names: action.names,
         scores: action.scores,
+        colors: action.colors,
+        startingPlayerIndex: action.startingPlayerIndex,
       })
     case 'guess':
       return guessLetter(state, action.letter)
@@ -43,6 +55,8 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       return attemptSolve(state, action.guess)
     case 'reveal':
       return revealPhrase(state)
+    case 'undo':
+      return undoLastMove(state)
     case 'clearScores':
       return {
         ...state,

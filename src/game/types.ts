@@ -6,6 +6,13 @@ export type Player = {
   id: number
   name: string
   score: number
+  color: string
+}
+
+/** A player as configured on the setup screen, before a game starts. */
+export type PlayerDraft = {
+  name: string
+  color: string
 }
 
 /** A concealed character slot. Non-letters are revealed from the start. */
@@ -17,7 +24,7 @@ export type Slot = {
 
 export type GamePhase = 'setup' | 'playing' | 'over'
 
-export type GameState = {
+type GameCore = {
   phase: GamePhase
   phrase: string
   category: string
@@ -27,6 +34,13 @@ export type GameState = {
   guessedLetters: Record<string, LetterState>
   solvedBy: number | null
   lastOutcome: GuessOutcome | null
+}
+
+/** A restorable game state, without an undo history of its own. */
+export type GameSnapshot = GameCore
+
+export type GameState = GameCore & {
+  history: GameSnapshot[]
 }
 
 export type GuessOutcome =
@@ -40,3 +54,4 @@ export type GuessOutcome =
 export const SOLVE_BONUS = 5
 export const MIN_PLAYERS = 2
 export const MAX_PLAYERS = 6
+export const MAX_HISTORY = 20

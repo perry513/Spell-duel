@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, type CSSProperties } from 'react'
 import type { LetterState } from '../game/types'
 
 const ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM']
@@ -15,6 +15,7 @@ type Props = {
   onGuess: (letter: string) => void
   onReveal: () => void
   onSolve: () => void
+  playerColor: string
 }
 
 export const Keyboard = ({
@@ -23,6 +24,7 @@ export const Keyboard = ({
   onGuess,
   onReveal,
   onSolve,
+  playerColor,
 }: Props) => {
   useEffect(() => {
     if (disabled) return
@@ -41,7 +43,11 @@ export const Keyboard = ({
   }, [disabled, onGuess])
 
   return (
-    <section className="keyboard" aria-label="Letter keyboard">
+    <section
+      aria-label="Letter keyboard"
+      className="keyboard"
+      style={{ '--player-color': playerColor } as CSSProperties}
+    >
       {ROWS.map((row) => (
         <div className="keyboard__row" key={row}>
           {[...row].map((letter) => {

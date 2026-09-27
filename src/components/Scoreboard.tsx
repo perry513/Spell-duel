@@ -1,4 +1,6 @@
 import { Trash2 } from 'lucide-react'
+import type { CSSProperties } from 'react'
+import { playerColorValue } from '../game/players'
 import type { Player } from '../game/types'
 
 type Props = {
@@ -21,7 +23,11 @@ export const Scoreboard = ({
         <div
           className={`score ${active ? 'score--active' : ''}`}
           key={player.id}
+          style={
+            { '--player-color': playerColorValue(player.color) } as CSSProperties
+          }
         >
+          <span aria-hidden="true" className="score__dot" />
           <span className="score__name">{player.name}</span>
           <span className="score__points">{player.score}</span>
           {active && <span className="sr-only">current turn</span>}

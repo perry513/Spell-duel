@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { validateNames, validatePhrase } from '../game/engine'
 import {
   SOURCE_OPTIONS,
@@ -8,35 +9,68 @@ import {
   type SourceId,
   type TierChoice,
 } from '../game/generator'
-import { MAX_PLAYERS, MIN_PLAYERS } from '../game/types'
+import {
+  PLAYER_COLORS,
+  defaultPlayerColor,
+  playerColorValue,
+} from '../game/players'
+import { MAX_PLAYERS, MIN_PLAYERS, type PlayerDraft } from '../game/types'
 
 type Props = {
-  initialNames: string[]
-  onStart: (phrase: string, category: string, names: string[]) => void
+  initialPlayers: PlayerDraft[]
+  initialTier: TierChoice
+  onStart: (phrase: string, category: string, players: PlayerDraft[]) => void
+  onTierChange: (tier: TierChoice) => void
 }
 
-export const Setup = ({ initialNames, onStart }: Props) => {
-  const [names, setNames] = useState<string[]>(initialNames)
+export const Setup = ({
+  initialPlayers,
+  initialTier,
+  onStart,
+  onTierChange,
+}: Props) => {
+  const [players, setPlayers] = useState<PlayerDraft[]>(initialPlayers)
   const [source, setSource] = useState<SourceId>('any')
-  const [tier, setTier] = useState<TierChoice>('any')
+  const [tier, setTier] = useState<TierChoice>(initialTier)
   const [manual, setManual] = useState(false)
   const [manualPhrase, setManualPhrase] = useState('')
   const [showPhrase, setShowPhrase] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const names = players.map((player) => player.name)
+
   const setName = (index: number, value: string) => {
-    setNames((current) =>
-      current.map((name, i) => (i === index ? value : name)),
+    setPlayers((current) =>
+      current.map((player, i) =>
+        i === index ? { ...player, name: value } : player,
+      ),
     )
   }
 
+  const setColor = (index: number, value: string) => {
+    setPlayers((current) =>
+      current.map((player, i) =>
+        i === index ? { ...player, color: value } : player,
+      ),
+    )
+  }
+
+  const chooseTier = (value: TierChoice) => {
+    setTier(value)
+    onTierChange(value)
+  }
+
   const addPlayer = () => {
-    if (names.length < MAX_PLAYERS) setNames((current) => [...current, ''])
+    if (players.length < MAX_PLAYERS)
+      setPlayers((current) => [
+        ...current,
+        { name: '', color: defaultPlayerColor(current.length) },
+      ])
   }
 
   const removePlayer = (index: number) => {
-    if (names.length > MIN_PLAYERS)
-      setNames((current) => current.filter((_, i) => i !== index))
+    if (players.length > MIN_PLAYERS)
+      setPlayers((current) => current.filter((_, i) => i !== index))
   }
 
   const submit = (event: React.FormEvent) => {
@@ -54,12 +88,12 @@ export const Setup = ({ initialNames, onStart }: Props) => {
         setError(phraseError)
         return
       }
-      onStart(manualPhrase.trim(), 'Custom', names)
+      onStart(manualPhrase.trim(), 'Custom', players)
       return
     }
 
     const generated = generatePhrase(source, tier)
-    onStart(generated.phrase, generated.category, names)
+    onStart(generated.phrase, generated.category, players)
   }
 
   return (
@@ -72,8 +106,25 @@ export const Setup = ({ initialNames, onStart }: Props) => {
 
       <fieldset className="field">
         <legend>Players</legend>
-        {names.map((name, index) => (
+        {players.map((player, index) => (
           <div className="player-row" key={index}>
+            <select
+              aria-label={`Player ${index + 1} color`}
+              className="input player-color"
+              onChange={(event) => setColor(index, event.target.value)}
+              style={
+                {
+                  '--player-color': playerColorValue(player.color),
+                } as CSSProperties
+              }
+              value={player.color}
+            >
+              {PLAYER_COLORS.map((color) => (
+                <option key={color.id} value={color.id}>
+                  {color.label}
+                </option>
+              ))}
+            </select>
             <input
               aria-label={`Player ${index + 1} name`}
               autoComplete="off"
@@ -81,12 +132,12 @@ export const Setup = ({ initialNames, onStart }: Props) => {
               maxLength={16}
               onChange={(event) => setName(index, event.target.value)}
               placeholder={`Player ${index + 1}`}
-              value={name}
+              value={player.name}
             />
             <button
               aria-label={`Remove player ${index + 1}`}
               className="btn btn--ghost"
-              disabled={names.length <= MIN_PLAYERS}
+              disabled={players.length <= MIN_PLAYERS}
               onClick={() => removePlayer(index)}
               type="button"
             >
@@ -96,7 +147,7 @@ export const Setup = ({ initialNames, onStart }: Props) => {
         ))}
         <button
           className="btn btn--ghost"
-          disabled={names.length >= MAX_PLAYERS}
+          disabled={players.length >= MAX_PLAYERS}
           onClick={addPlayer}
           type="button"
         >
@@ -129,10 +180,15 @@ export const Setup = ({ initialNames, onStart }: Props) => {
               value={manualPhrase}
             />
             <button
-              className="btn btn--ghost"
+              className="btn btn--ghost manual__toggle"
               onClick={() => setShowPhrase((value) => !value)}
               type="button"
             >
+              {showPhrase ? (
+                <EyeOff aria-hidden="true" size={17} />
+              ) : (
+                <Eye aria-hidden="true" size={17} />
+              )}
               {showPhrase ? 'Hide' : 'Show'}
             </button>
           </div>
@@ -165,7 +221,7 @@ export const Setup = ({ initialNames, onStart }: Props) => {
                   aria-pressed={tier === option.id}
                   className={`tier ${tier === option.id ? 'tier--on' : ''}`}
                   key={option.id}
-                  onClick={() => setTier(option.id)}
+                  onClick={() => chooseTier(option.id)}
                   type="button"
                 >
                   {option.label}

@@ -1,13 +1,15 @@
-import { Globe } from 'lucide-react'
+import { Globe, Undo2 } from 'lucide-react'
 import { winners } from '../game/engine'
 import type { GameState } from '../game/types'
 
 type Props = {
   state: GameState
+  canUndo: boolean
   onPlayAgain: () => void
+  onUndo: () => void
 }
 
-export const GameOver = ({ state, onPlayAgain }: Props) => {
+export const GameOver = ({ state, canUndo, onPlayAgain, onUndo }: Props) => {
   const champions = winners(state.players)
   const ranked = [...state.players].sort((a, b) => b.score - a.score)
   const solver =
@@ -48,6 +50,17 @@ export const GameOver = ({ state, onPlayAgain }: Props) => {
           </li>
         ))}
       </ol>
+
+      {canUndo && (
+        <button
+          className="btn btn--ghost btn--block gameover__undo"
+          onClick={onUndo}
+          type="button"
+        >
+          <Undo2 aria-hidden="true" size={16} />
+          Undo last move
+        </button>
+      )}
 
       <button
         className="btn btn--primary btn--block"

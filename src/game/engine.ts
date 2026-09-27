@@ -1,7 +1,10 @@
+import { defaultPlayerColor } from './players'
 import {
+  MAX_HISTORY,
   MAX_PLAYERS,
   MIN_PLAYERS,
   SOLVE_BONUS,
+  type GameSnapshot,
   type GameState,
   type LetterState,
   type Player,
@@ -44,13 +47,21 @@ export const winners = (players: Player[]): Player[] => {
   return players.filter((player) => player.score === top)
 }
 
-export const createPlayers = (names: string[], scores: number[] = []): Player[] =>
+export const displayName = (name: string, index: number): string =>
+  name.trim() || `Player ${index + 1}`
+
+export const createPlayers = (
+  names: string[],
+  scores: number[] = [],
+  colors: string[] = [],
+): Player[] =>
   names
     .slice(0, MAX_PLAYERS)
     .map((name, index) => ({
       id: index,
-      name: name.trim() || `Player ${index + 1}`,
+      name: displayName(name, index),
       score: scores[index] ?? 0,
+      color: colors[index] ?? defaultPlayerColor(index),
     }))
 
 export const validatePhrase = (phrase: string): string | null => {
@@ -71,6 +82,8 @@ export type CreateGameInput = {
   category: string
   names: string[]
   scores?: number[]
+  colors?: string[]
+  startingPlayerIndex?: number
   rng?: Rng
 }
 
@@ -79,11 +92,14 @@ export const createGame = ({
   category,
   names,
   scores,
+  colors,
+  startingPlayerIndex = 0,
   rng = Math.random,
 }: CreateGameInput): GameState => {
   const slots = toSlots(phrase)
   const guessedLetters: Record<string, LetterState> = {}
   const letters = distinctLetters(phrase)
+  const players = createPlayers(names, scores, colors)
 
   // Opening freebie, no points. Skipped when it would reveal the whole phrase.
   if (letters.length > 1) {
@@ -99,12 +115,38 @@ export const createGame = ({
     phrase,
     category,
     slots,
-    players: createPlayers(names, scores),
-    activePlayerIndex: 0,
+    players,
+    activePlayerIndex: players[startingPlayerIndex] ? startingPlayerIndex : 0,
     guessedLetters,
     solvedBy: null,
     lastOutcome: null,
+    history: [],
   }
+}
+
+const snapshot = (state: GameState): GameSnapshot => ({
+  phase: state.phase,
+  phrase: state.phrase,
+  category: state.category,
+  slots: state.slots,
+  players: state.players,
+  activePlayerIndex: state.activePlayerIndex,
+  guessedLetters: state.guessedLetters,
+  solvedBy: state.solvedBy,
+  lastOutcome: state.lastOutcome,
+})
+
+/** Keeps the pre-move state so an accidental guess can be taken back. */
+const remember = (state: GameState, next: GameState): GameState => ({
+  ...next,
+  history: [...state.history, snapshot(state)].slice(-MAX_HISTORY),
+})
+
+export const undoLastMove = (state: GameState): GameState => {
+  const previous = state.history.at(-1)
+  if (!previous) return state
+
+  return { ...previous, lastOutcome: null, history: state.history.slice(0, -1) }
 }
 
 const advanceTurn = (state: GameState): number =>
@@ -133,37 +175,37 @@ export const guessLetter = (state: GameState, rawLetter: string): GameState => {
   const occurrences = concealedCount(state.slots, letter)
 
   if (occurrences === 0) {
-    return {
+    return remember(state, {
       ...state,
       guessedLetters: { ...state.guessedLetters, [letter]: 'miss' },
       activePlayerIndex: advanceTurn(state),
       lastOutcome: { kind: 'miss', letter },
-    }
+    })
   }
 
   const slots = state.slots.map((slot) =>
     normalizeLetter(slot.char) === letter ? { ...slot, revealed: true } : slot,
   )
 
-  return {
+  return remember(state, {
     ...state,
     slots,
     players: award(state, occurrences),
     guessedLetters: { ...state.guessedLetters, [letter]: 'hit' },
     phase: isGameOver(slots) ? 'over' : 'playing',
     lastOutcome: { kind: 'hit', letter, occurrences, points: occurrences },
-  }
+  })
 }
 
 export const attemptSolve = (state: GameState, guess: string): GameState => {
   if (state.phase !== 'playing') return state
 
   if (normalizePhrase(guess) !== normalizePhrase(state.phrase)) {
-    return {
+    return remember(state, {
       ...state,
       activePlayerIndex: advanceTurn(state),
       lastOutcome: { kind: 'solve-failed' },
-    }
+    })
   }
 
   const remaining = state.slots.filter(
@@ -171,23 +213,23 @@ export const attemptSolve = (state: GameState, guess: string): GameState => {
   ).length
   const points = remaining + SOLVE_BONUS
 
-  return {
+  return remember(state, {
     ...state,
     slots: state.slots.map((slot) => ({ ...slot, revealed: true })),
     players: award(state, points),
     phase: 'over',
     solvedBy: state.activePlayerIndex,
     lastOutcome: { kind: 'solved', points },
-  }
+  })
 }
 
 export const revealPhrase = (state: GameState): GameState => {
   if (state.phase !== 'playing') return state
 
-  return {
+  return remember(state, {
     ...state,
     slots: state.slots.map((slot) => ({ ...slot, revealed: true })),
     phase: 'over',
     lastOutcome: { kind: 'revealed' },
-  }
+  })
 }

@@ -201,10 +201,24 @@ body {
   display: flex;
   gap: 8px;
   margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid
+    color-mix(in srgb, var(--player-color) 30%, var(--border));
 }
 
 .keyboard__actions .btn {
   flex: 1 1 0;
+}
+
+.keyboard__actions .btn--solve {
+  background: color-mix(in srgb, var(--player-color) 18%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--player-color) 65%, var(--border));
+  box-shadow: 0 2px 0
+    color-mix(in srgb, var(--player-color) 28%, transparent);
+}
+
+.keyboard__actions .btn--solve:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--player-color) 28%, var(--surface-hover));
 }
 
 .input {
@@ -268,6 +282,13 @@ body {
 .manual {
   display: flex;
   gap: 8px;
+}
+
+.manual__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .toggle {
@@ -626,9 +647,28 @@ body {
 
 /* Keyboard */
 .keyboard {
+  --player-color: var(--accent);
+  --player-color-border: color-mix(
+    in srgb,
+    var(--player-color) 42%,
+    var(--border)
+  );
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--player-color-border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--player-color) 10%, transparent),
+      transparent 80%
+    ),
+    var(--surface);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--player-color) 14%, transparent) inset,
+    0 12px 24px -20px var(--player-color);
 }
 
 .keyboard__row {
@@ -648,14 +688,17 @@ body {
   font-weight: 700;
   color: var(--text);
   background: var(--surface-2);
-  border: 1px solid var(--border);
+  border: 1px solid var(--player-color-border, var(--border));
   border-radius: 8px;
   cursor: pointer;
   transition: background 120ms ease, transform 120ms ease;
 }
 
 .key:hover:not(:disabled) {
-  background: var(--surface-hover);
+  background: color-mix(in srgb, var(--player-color) 14%, var(--surface-hover));
+  border-color: var(--player-color);
+  box-shadow: 0 0 0 1px
+    color-mix(in srgb, var(--player-color) 22%, transparent) inset;
 }
 
 .key:active:not(:disabled) {
@@ -677,6 +720,11 @@ body {
 
 .key:disabled {
   cursor: not-allowed;
+}
+
+.keyboard .key:focus-visible,
+.keyboard .btn:focus-visible {
+  outline-color: var(--player-color);
 }
 
 .key__mark {
@@ -794,5 +842,108 @@ body {
   .key {
     min-height: 46px;
     font-size: 0.9rem;
+  }
+}
+
+/* Player colours */
+.player-color {
+  flex: 0 0 auto;
+  width: 108px;
+  font-weight: 600;
+  border: 1px solid var(--player-color);
+  border-left: 8px solid var(--player-color);
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--player-color) 18%, transparent),
+      transparent 48%
+    ),
+    var(--surface-2);
+  box-shadow: 0 0 0 1px
+    color-mix(in srgb, var(--player-color) 18%, transparent) inset;
+}
+
+.player-color:hover {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--player-color) 28%, transparent),
+      transparent 58%
+    ),
+    var(--surface-hover);
+}
+
+.player-color:focus-visible {
+  outline-color: var(--player-color);
+}
+
+.score {
+  --player-color: var(--accent);
+}
+
+.score__dot {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--player-color);
+}
+
+.score__name {
+  flex: 1 1 auto;
+}
+
+.score--active {
+  border-color: var(--player-color);
+  box-shadow: 0 0 0 2px var(--player-color) inset;
+  background: color-mix(in srgb, var(--player-color) 16%, var(--surface));
+}
+
+.score--active .score__name {
+  font-weight: 700;
+}
+
+.turn {
+  padding: 8px 12px;
+  border-left: 4px solid var(--player-color, var(--accent));
+  background: color-mix(
+    in srgb,
+    var(--player-color, var(--accent)) 9%,
+    var(--surface)
+  );
+}
+
+.turn__name {
+  color: var(--player-color, var(--accent));
+}
+
+.outcome-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 34px;
+}
+
+.btn--undo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  background: transparent;
+}
+
+.gameover__undo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+@media (max-width: 420px) {
+  .player-color {
+    width: 84px;
   }
 }

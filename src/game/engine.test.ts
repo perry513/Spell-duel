@@ -4,6 +4,7 @@ import {
   createGame,
   guessLetter,
   revealPhrase,
+  undoLastMove,
   winners,
 } from './engine'
 import { SOLVE_BONUS, type GameState } from './types'
@@ -51,6 +52,35 @@ describe('createGame', () => {
     })
 
     expect(state.players.map((player) => player.score)).toEqual([7, 3])
+  })
+
+  it('starts with the given player and keeps their colours', () => {
+    const state = createGame({
+      phrase: 'BANANA SPLIT',
+      category: 'Test',
+      names: ['Ann', 'Bob'],
+      colors: ['pink', 'teal'],
+      startingPlayerIndex: 1,
+      rng: firstLetter,
+    })
+
+    expect(state.activePlayerIndex).toBe(1)
+    expect(state.players.map((player) => player.color)).toEqual([
+      'pink',
+      'teal',
+    ])
+  })
+
+  it('falls back to the first player when the starting index is missing', () => {
+    const state = createGame({
+      phrase: 'BANANA SPLIT',
+      category: 'Test',
+      names: ['Ann', 'Bob'],
+      startingPlayerIndex: 9,
+      rng: firstLetter,
+    })
+
+    expect(state.activePlayerIndex).toBe(0)
   })
 })
 
@@ -136,12 +166,37 @@ describe('revealPhrase', () => {
   })
 })
 
+describe('undoLastMove', () => {
+  it('takes back a guess, restoring the score and the turn', () => {
+    const start = newGame('BANANA SPLIT')
+    const state = undoLastMove(guessLetter(start, 'Z'))
+
+    expect(state.activePlayerIndex).toBe(start.activePlayerIndex)
+    expect(state.guessedLetters).toEqual(start.guessedLetters)
+    expect(state.players).toEqual(start.players)
+  })
+
+  it('reopens a game that was ended by a reveal', () => {
+    const start = newGame('BANANA SPLIT')
+    const state = undoLastMove(revealPhrase(start))
+
+    expect(state.phase).toBe('playing')
+    expect(concealed(state)).toBe(concealed(start))
+  })
+
+  it('does nothing when there is no history', () => {
+    const start = newGame('BANANA SPLIT')
+
+    expect(undoLastMove(start)).toBe(start)
+  })
+})
+
 describe('winners', () => {
   it('returns every player tied at the top score', () => {
     const tied = winners([
-      { id: 0, name: 'Ann', score: 4 },
-      { id: 1, name: 'Bob', score: 4 },
-      { id: 2, name: 'Cal', score: 1 },
+      { id: 0, name: 'Ann', score: 4, color: 'blue' },
+      { id: 1, name: 'Bob', score: 4, color: 'pink' },
+      { id: 2, name: 'Cal', score: 1, color: 'green' },
     ])
 
     expect(tied.map((player) => player.name)).toEqual(['Ann', 'Bob'])

@@ -1,10 +1,25 @@
-import { useCallback, useEffect, useReducer, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useReducer,
+  useState,
+  type CSSProperties,
+} from 'react'
+import { Undo2 } from 'lucide-react'
 import { Board } from './components/Board'
 import { GameOver } from './components/GameOver'
 import { Keyboard } from './components/Keyboard'
 import { Scoreboard } from './components/Scoreboard'
 import { Setup } from './components/Setup'
 import { ThemePicker } from './components/ThemePicker'
+import { winners } from './game/engine'
+import type { TierChoice } from './game/generator'
+import { defaultPlayerColor, playerColorValue } from './game/players'
+import {
+  readPreferences,
+  savePreferences,
+  startingIndexFor,
+} from './game/preferences'
 import { gameReducer, IDLE_STATE } from './game/reducer'
 import {
   mergePlayerScores,
@@ -13,7 +28,7 @@ import {
   writeSavedScores,
   type SavedScores,
 } from './game/scores'
-import type { GuessOutcome } from './game/types'
+import type { GuessOutcome, PlayerDraft } from './game/types'
 import { readSavedTheme, writeSavedTheme } from './theme'
 
 const outcomeMessage = (outcome: GuessOutcome, playerName: string): string => {
@@ -35,7 +50,13 @@ const outcomeMessage = (outcome: GuessOutcome, playerName: string): string => {
 
 const App = () => {
   const [state, dispatch] = useReducer(gameReducer, IDLE_STATE)
-  const [roster, setRoster] = useState<string[]>(['', ''])
+  const [preferences, setPreferences] = useState(readPreferences)
+  const [roster, setRoster] = useState<PlayerDraft[]>(() =>
+    [0, 1].map((index) => ({
+      name: '',
+      color: preferences.colors[index] ?? defaultPlayerColor(index),
+    })),
+  )
   const [savedScores, setSavedScores] = useState<SavedScores>(readSavedScores)
   const [theme, setTheme] = useState(readSavedTheme)
   const [solving, setSolving] = useState(false)
@@ -57,12 +78,23 @@ const App = () => {
     writeSavedScores(savedScores)
   }, [savedScores])
 
+  useEffect(() => {
+    if (state.phase !== 'over') return
+
+    const champions = winners(state.players)
+    if (champions.length !== 1 || champions[0].score === 0) return
+
+    savePreferences({ lastWinner: champions[0].name })
+  }, [state.phase, state.players])
+
   const activePlayer = state.players[state.activePlayerIndex]
+  const canUndo = state.history.length > 0
   const savedPlayers = Object.entries(savedScores).map(
     ([, savedScore], index) => ({
       id: index,
       name: savedScore.name,
       score: savedScore.score,
+      color: defaultPlayerColor(index),
     }),
   )
 
@@ -70,6 +102,8 @@ const App = () => {
     (letter: string) => dispatch({ type: 'guess', letter }),
     [],
   )
+
+  const undoMove = useCallback(() => dispatch({ type: 'undo' }), [])
 
   useEffect(() => {
     if (!state.lastOutcome || state.phase === 'over') return
@@ -94,16 +128,31 @@ const App = () => {
     dispatch({ type: 'clearScores' })
   }
 
-  const startGame = (phrase: string, category: string, names: string[]) => {
-    setRoster(names)
+  const startGame = (
+    phrase: string,
+    category: string,
+    players: PlayerDraft[],
+  ) => {
+    setRoster(players)
+
+    const names = players.map((player) => player.name)
+    const colors = players.map((player) => player.color)
+    const saved = savePreferences({ colors })
+    setPreferences(saved)
+
     dispatch({
       type: 'start',
       phrase,
       category,
       names,
+      colors,
       scores: scoresForNames(names, savedScores),
+      startingPlayerIndex: startingIndexFor(names, saved.lastWinner),
     })
   }
+
+  const chooseTier = (tier: TierChoice) =>
+    setPreferences(savePreferences({ tier }))
 
   const playAgain = () => {
     setSavedScores(mergePlayerScores(savedScores, state.players))
@@ -125,13 +174,26 @@ const App = () => {
             players={savedPlayers}
           />
         )}
-        <Setup initialNames={roster} onStart={startGame} />
+        <Setup
+          initialPlayers={roster}
+          initialTier={preferences.tier}
+          onStart={startGame}
+          onTierChange={chooseTier}
+        />
       </main>
     )
   }
 
   return (
-    <main className="app" data-theme={theme}>
+    <main
+      className="app"
+      data-theme={theme}
+      style={
+        {
+          '--player-color': playerColorValue(activePlayer.color),
+        } as CSSProperties
+      }
+    >
       <ThemePicker onThemeChange={setTheme} theme={theme} />
       <Scoreboard
         activePlayerIndex={state.activePlayerIndex}
@@ -143,15 +205,30 @@ const App = () => {
 
       {state.phase === 'playing' && (
         <>
-          <p className="turn" aria-live="polite">
-            <strong>{activePlayer.name}</strong> to guess
+          <p
+            className="turn"
+            aria-live="polite"
+          >
+            <strong className="turn__name">{activePlayer.name}</strong> to guess
           </p>
 
-          <p className="outcome" aria-live="assertive">
-            {state.lastOutcome
-              ? outcomeMessage(state.lastOutcome, activePlayer.name)
-              : '\u00a0'}
-          </p>
+          <div className="outcome-row">
+            <p className="outcome" aria-live="assertive">
+              {state.lastOutcome
+                ? outcomeMessage(state.lastOutcome, activePlayer.name)
+                : '\u00a0'}
+            </p>
+            {canUndo && (
+              <button
+                className="btn btn--undo"
+                onClick={undoMove}
+                type="button"
+              >
+                <Undo2 aria-hidden="true" size={15} />
+                Undo
+              </button>
+            )}
+          </div>
 
           <Keyboard
             disabled={solving}
@@ -159,6 +236,7 @@ const App = () => {
             onGuess={handleGuess}
             onReveal={() => setRevealing(true)}
             onSolve={() => setSolving(true)}
+            playerColor={playerColorValue(activePlayer.color)}
           />
         </>
       )}
@@ -235,7 +313,12 @@ const App = () => {
       )}
 
       {state.phase === 'over' && (
-        <GameOver onPlayAgain={playAgain} state={state} />
+        <GameOver
+          canUndo={canUndo}
+          onPlayAgain={playAgain}
+          onUndo={undoMove}
+          state={state}
+        />
       )}
     </main>
   )
