@@ -342,9 +342,13 @@ body {
   position: fixed;
   top: 16px;
   right: max(16px, calc((100vw - 720px) / 2 + 12px));
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   z-index: 20;
 }
 
+.theme-home,
 .theme-trigger {
   flex: 0 0 44px;
   display: grid;
@@ -354,6 +358,11 @@ body {
   padding: 0;
   color: var(--accent);
   background: var(--surface-2);
+}
+
+.theme-home:hover:not(:disabled) {
+  color: var(--accent-hover);
+  background: var(--surface-hover);
 }
 
 .theme-trigger:hover:not(:disabled) {

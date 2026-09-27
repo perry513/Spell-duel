@@ -79,7 +79,7 @@ export const Keyboard = ({
           onClick={onSolve}
           type="button"
         >
-          Solve the phrase
+          Type it! (Bonus)
         </button>
         <button
           className="btn btn--reveal"

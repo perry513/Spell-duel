@@ -1,18 +1,30 @@
 import { useState } from 'react'
-import { Palette } from 'lucide-react'
+import { House, Palette } from 'lucide-react'
 import { THEME_OPTIONS, type ThemeId } from '../theme'
 
 type Props = {
+  onHome?: () => void
   onThemeChange: (theme: ThemeId) => void
   theme: ThemeId
 }
 
-export const ThemePicker = ({ onThemeChange, theme }: Props) => {
+export const ThemePicker = ({ onHome, onThemeChange, theme }: Props) => {
   const [themesOpen, setThemesOpen] = useState(false)
   const selectedTheme = THEME_OPTIONS.find((option) => option.id === theme)
 
   return (
     <div className="theme-picker">
+      {onHome && (
+        <button
+          aria-label="Return to setup"
+          className="btn theme-home"
+          onClick={onHome}
+          title="Return to setup"
+          type="button"
+        >
+          <House aria-hidden="true" size={22} strokeWidth={2.25} />
+        </button>
+      )}
       <button
         aria-controls="theme-picker-options"
         aria-expanded={themesOpen}

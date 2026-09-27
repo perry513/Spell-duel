@@ -138,6 +138,15 @@ describe('attemptSolve', () => {
     expect(state.players[0].score).toBe(remaining + SOLVE_BONUS)
   })
 
+  it('does not add the bonus when one letter remains', () => {
+    const start = newGame('AB')
+    const state = attemptSolve(start, 'AB')
+
+    expect(concealed(start)).toBe(1)
+    expect(state.players[0].score).toBe(1)
+    expect(state.lastOutcome).toEqual({ kind: 'solved', points: 1 })
+  })
+
   it('ignores casing and extra whitespace', () => {
     const state = attemptSolve(newGame('BANANA SPLIT'), '  Banana   Split ')
 

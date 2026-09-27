@@ -211,7 +211,7 @@ export const attemptSolve = (state: GameState, guess: string): GameState => {
   const remaining = state.slots.filter(
     (slot) => slot.isLetter && !slot.revealed,
   ).length
-  const points = remaining + SOLVE_BONUS
+  const points = remaining + (remaining > 1 ? SOLVE_BONUS : 0)
 
   return remember(state, {
     ...state,

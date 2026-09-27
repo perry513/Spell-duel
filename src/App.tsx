@@ -154,7 +154,7 @@ const App = () => {
   const chooseTier = (tier: TierChoice) =>
     setPreferences(savePreferences({ tier }))
 
-  const playAgain = () => {
+  const goHome = () => {
     setSavedScores(mergePlayerScores(savedScores, state.players))
     dispatch({ type: 'reset' })
     setSolving(false)
@@ -194,7 +194,7 @@ const App = () => {
         } as CSSProperties
       }
     >
-      <ThemePicker onThemeChange={setTheme} theme={theme} />
+      <ThemePicker onHome={goHome} onThemeChange={setTheme} theme={theme} />
       <Scoreboard
         activePlayerIndex={state.activePlayerIndex}
         onClearScores={clearScores}
@@ -209,7 +209,7 @@ const App = () => {
             className="turn"
             aria-live="polite"
           >
-            <strong className="turn__name">{activePlayer.name}</strong> to guess
+            <strong className="turn__name">{activePlayer.name}</strong>&rsquo;s turn
           </p>
 
           <div className="outcome-row">
@@ -315,7 +315,7 @@ const App = () => {
       {state.phase === 'over' && (
         <GameOver
           canUndo={canUndo}
-          onPlayAgain={playAgain}
+          onPlayAgain={goHome}
           onUndo={undoMove}
           state={state}
         />
