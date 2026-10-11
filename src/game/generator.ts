@@ -1,7 +1,12 @@
 import type { Rng } from './engine'
 import { CATEGORIES, TEMPLATES, type Template } from './phrases'
 import type { Tier } from './types'
-import { BANK_SUBJECTS, WORD_BANK, tierOfText } from './wordbank'
+import {
+  BANK_SUBJECTS,
+  SUPPLEMENTAL_PHRASES,
+  WORD_BANK,
+  tierOfText,
+} from './wordbank'
 
 export type GeneratedPhrase = {
   phrase: string
@@ -16,6 +21,13 @@ export type TierChoice = Tier | 'any'
 
 /** Widen past the chosen tier rather than replay the same handful of entries. */
 const MIN_POOL = 10
+
+const SOURCE_LABELS = new Map(
+  [...BANK_SUBJECTS, ...CATEGORIES, ...TEMPLATES].map(({ id, label }) => [
+    id,
+    label,
+  ]),
+)
 
 const expandTemplate = (template: Template): string[] => {
   const keys = [...template.pattern.matchAll(/\{(\w+)\}/gu)].map(
@@ -36,9 +48,13 @@ const expandTemplate = (template: Template): string[] => {
 const POOL: PoolEntry[] = [
   ...WORD_BANK.map((entry) => ({
     phrase: entry.text,
-    category:
-      BANK_SUBJECTS.find((subject) => subject.id === entry.subject)?.label ??
-      entry.subject,
+    category: SOURCE_LABELS.get(entry.subject) ?? entry.subject,
+    sourceId: entry.subject,
+    tier: entry.tier,
+  })),
+  ...SUPPLEMENTAL_PHRASES.map((entry) => ({
+    phrase: entry.text,
+    category: SOURCE_LABELS.get(entry.subject) ?? entry.subject,
     sourceId: entry.subject,
     tier: entry.tier,
   })),

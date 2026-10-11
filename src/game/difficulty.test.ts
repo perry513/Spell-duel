@@ -8,7 +8,7 @@ import {
 } from './difficulty'
 import { generatePhrase } from './generator'
 import { tierOfText } from './wordbank'
-import { WORD_BANK } from './wordbank.generated'
+import { SUPPLEMENTAL_PHRASES, WORD_BANK } from './wordbank.generated'
 
 describe('scoring components', () => {
   it('treats absent words as the least familiar', () => {
@@ -61,6 +61,13 @@ describe('word bank', () => {
     for (const tier of ['fun', 'normal', 'hard', 'challenging'] as const) {
       expect(WORD_BANK.filter((entry) => entry.tier === tier).length).toBeGreaterThan(0)
     }
+  })
+
+  it('keeps longer supplemental phrases available with their category label', () => {
+    expect(
+      SUPPLEMENTAL_PHRASES.some((entry) => wordsOf(entry.text).length > 2),
+    ).toBe(true)
+    expect(generatePhrase('idioms', 'any', () => 0).category).toBe('Idioms')
   })
 
   it('contains only clean, guessable entries', () => {

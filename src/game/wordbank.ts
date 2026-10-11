@@ -1,8 +1,8 @@
 import { tierOfPhrase, tierOfWord, wordsOf } from './difficulty'
 import type { Tier } from './types'
-import { BANK_SUBJECTS, WORD_BANK } from './wordbank.generated'
+import { BANK_SUBJECTS, SUPPLEMENTAL_PHRASES, WORD_BANK } from './wordbank.generated'
 
-export { BANK_SUBJECTS, WORD_BANK }
+export { BANK_SUBJECTS, SUPPLEMENTAL_PHRASES, WORD_BANK }
 
 // Keyed on single tokens so lookups line up with how tierOfPhrase splits text;
 // "t-shirt" is two tokens and so is scored per word instead.
