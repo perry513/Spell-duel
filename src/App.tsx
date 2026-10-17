@@ -44,7 +44,9 @@ const outcomeMessage = (outcome: GuessOutcome, playerName: string): string => {
     case 'revealed':
       return 'Phrase revealed. Game over.'
     case 'solve-failed':
-      return 'Not the phrase. Turn passes.'
+      return outcome.penalty > 0
+        ? `${playerName} was wrong. -${outcome.penalty} points; turn continues. 👎`
+        : 'Not the phrase. Turn passes. 👎'
   }
 }
 
@@ -60,8 +62,10 @@ const App = () => {
   const [savedScores, setSavedScores] = useState<SavedScores>(readSavedScores)
   const [theme, setTheme] = useState(readSavedTheme)
   const [solving, setSolving] = useState(false)
+  const [stealing, setStealing] = useState(false)
   const [revealing, setRevealing] = useState(false)
   const [solveGuess, setSolveGuess] = useState('')
+  const [solvePlayerIndex, setSolvePlayerIndex] = useState(0)
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -107,15 +111,29 @@ const App = () => {
 
   useEffect(() => {
     if (!state.lastOutcome || state.phase === 'over') return
-    const timer = setTimeout(() => dispatch({ type: 'clearOutcome' }), 2600)
+    const timer = setTimeout(() => dispatch({ type: 'clearOutcome' }), 10000)
     return () => clearTimeout(timer)
   }, [state.lastOutcome, state.phase])
 
   const submitSolve = (event: React.FormEvent) => {
     event.preventDefault()
-    dispatch({ type: 'solve', guess: solveGuess })
+    dispatch({
+      type: 'solve',
+      guess: solveGuess,
+      playerIndex: stealing ? solvePlayerIndex : state.activePlayerIndex,
+    })
     setSolveGuess('')
     setSolving(false)
+    setStealing(false)
+  }
+
+  const beginStealSolve = () => {
+    const firstOtherPlayer = state.players.findIndex(
+      (_, index) => index !== state.activePlayerIndex,
+    )
+    setSolvePlayerIndex(firstOtherPlayer)
+    setStealing(true)
+    setSolving(true)
   }
 
   const confirmReveal = () => {
@@ -158,6 +176,7 @@ const App = () => {
     setSavedScores(mergePlayerScores(savedScores, state.players))
     dispatch({ type: 'reset' })
     setSolving(false)
+    setStealing(false)
     setRevealing(false)
     setSolveGuess('')
   }
@@ -213,9 +232,19 @@ const App = () => {
           </p>
 
           <div className="outcome-row">
-            <p className="outcome" aria-live="assertive">
+            <p
+              className={`outcome${state.lastOutcome?.kind === 'solve-failed' ? ' outcome--solve-failed' : ''}`}
+              aria-live="assertive"
+              key={state.history.length}
+            >
               {state.lastOutcome
-                ? outcomeMessage(state.lastOutcome, activePlayer.name)
+                ? outcomeMessage(
+                    state.lastOutcome,
+                    state.lastOutcome.kind === 'solve-failed'
+                      ? state.players[state.lastOutcome.playerIndex]?.name ??
+                          activePlayer.name
+                      : activePlayer.name,
+                  )
                 : '\u00a0'}
             </p>
             {canUndo && (
@@ -236,6 +265,7 @@ const App = () => {
             onGuess={handleGuess}
             onReveal={() => setRevealing(true)}
             onSolve={() => setSolving(true)}
+            onStealSolve={beginStealSolve}
             playerColor={playerColorValue(activePlayer.color)}
           />
         </>
@@ -249,8 +279,47 @@ const App = () => {
           role="dialog"
         >
           <form className="panel modal__panel" onSubmit={submitSolve}>
+            {stealing && (
+              <>
+                <h2 className="modal__heading">I KNOW IT!</h2>
+                <p className="modal__label">
+                  Which player is answering?
+                </p>
+                <div
+                  aria-label="Choose the answering player"
+                  className="player-choices"
+                  role="group"
+                >
+                  {state.players.map((player, index) =>
+                    index === state.activePlayerIndex ? null : (
+                      <button
+                        aria-pressed={solvePlayerIndex === index}
+                        className={`player-choice${solvePlayerIndex === index ? ' player-choice--selected' : ''}`}
+                        key={player.id}
+                        onClick={() => setSolvePlayerIndex(index)}
+                        style={
+                          {
+                            '--choice-color': playerColorValue(player.color),
+                          } as CSSProperties
+                        }
+                        type="button"
+                      >
+                        <span className="player-choice__name">
+                          {player.name}
+                        </span>
+                        <span className="player-choice__score">
+                          {player.score} pts
+                        </span>
+                      </button>
+                    ),
+                  )}
+                </div>
+              </>
+            )}
             <label className="modal__label" htmlFor="solve-input">
-              {activePlayer.name}, type the full phrase
+              {stealing
+                ? 'Type the full phrase'
+                : `${activePlayer.name}, type the full phrase`}
             </label>
             <input
               autoComplete="off"
@@ -261,12 +330,17 @@ const App = () => {
               value={solveGuess}
             />
             <p className="modal__hint">
-              A wrong answer just passes the turn &mdash; no penalty.
+              {stealing
+                ? 'A wrong answer costs this player one point per hidden letter.'
+                : 'A wrong answer just passes the turn — no penalty.'}
             </p>
             <div className="modal__actions">
               <button
                 className="btn btn--ghost"
-                onClick={() => setSolving(false)}
+                onClick={() => {
+                  setSolving(false)
+                  setStealing(false)
+                }}
                 type="button"
               >
                 Cancel

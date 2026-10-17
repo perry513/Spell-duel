@@ -160,6 +160,30 @@ describe('attemptSolve', () => {
     expect(state.players[0].score).toBe(0)
     expect(state.activePlayerIndex).toBe(1)
   })
+
+  it('awards an off-turn solver the normal solve points', () => {
+    const start = newGame('BANANA SPLIT')
+    const remaining = concealed(start)
+    const state = attemptSolve(start, 'BANANA SPLIT', 1)
+
+    expect(state.players[1].score).toBe(remaining + SOLVE_BONUS)
+    expect(state.solvedBy).toBe(1)
+    expect(state.activePlayerIndex).toBe(start.activePlayerIndex)
+  })
+
+  it('penalizes a wrong off-turn solver by the number of concealed letters', () => {
+    const start = newGame('BANANA SPLIT')
+    const remaining = concealed(start)
+    const state = attemptSolve(start, 'apple pie', 1)
+
+    expect(state.players[1].score).toBe(-remaining)
+    expect(state.activePlayerIndex).toBe(start.activePlayerIndex)
+    expect(state.lastOutcome).toEqual({
+      kind: 'solve-failed',
+      playerIndex: 1,
+      penalty: remaining,
+    })
+  })
 })
 
 describe('revealPhrase', () => {

@@ -31,7 +31,7 @@ export type GameAction =
       startingPlayerIndex?: number
     }
   | { type: 'guess'; letter: string }
-  | { type: 'solve'; guess: string }
+  | { type: 'solve'; guess: string; playerIndex?: number }
   | { type: 'reveal' }
   | { type: 'undo' }
   | { type: 'clearScores' }
@@ -52,7 +52,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'guess':
       return guessLetter(state, action.letter)
     case 'solve':
-      return attemptSolve(state, action.guess)
+      return attemptSolve(state, action.guess, action.playerIndex)
     case 'reveal':
       return revealPhrase(state)
     case 'undo':

@@ -15,6 +15,7 @@ type Props = {
   onGuess: (letter: string) => void
   onReveal: () => void
   onSolve: () => void
+  onStealSolve: () => void
   playerColor: string
 }
 
@@ -24,6 +25,7 @@ export const Keyboard = ({
   onGuess,
   onReveal,
   onSolve,
+  onStealSolve,
   playerColor,
 }: Props) => {
   useEffect(() => {
@@ -80,6 +82,14 @@ export const Keyboard = ({
           type="button"
         >
           Type it! (Bonus)
+        </button>
+        <button
+          className="btn btn--steal"
+          disabled={disabled}
+          onClick={onStealSolve}
+          type="button"
+        >
+          I KNOW IT!
         </button>
         <button
           className="btn btn--reveal"

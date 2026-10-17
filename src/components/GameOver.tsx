@@ -18,7 +18,9 @@ export const GameOver = ({ state, canUndo, onPlayAgain, onUndo }: Props) => {
   meaningSearch.searchParams.set('q', `define ${state.phrase}`)
 
   return (
-    <div className="panel gameover">
+    <div
+      className={`panel gameover${state.solvedBy !== null ? ' gameover--solved' : ''}`}
+    >
       <h2 className="gameover__heading">
         {champions.length > 1
           ? `It's a tie: ${champions.map((player) => player.name).join(' & ')}`
@@ -36,7 +38,7 @@ export const GameOver = ({ state, canUndo, onPlayAgain, onUndo }: Props) => {
         Search meaning on Google
       </a>
       {solver && (
-        <p className="gameover__solver">Solved by {solver.name}</p>
+        <p className="gameover__solver">Solved by {solver.name} 👍</p>
       )}
       {state.lastOutcome?.kind === 'revealed' && (
         <p className="gameover__solver">Phrase revealed. No points awarded.</p>

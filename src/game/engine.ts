@@ -152,9 +152,13 @@ export const undoLastMove = (state: GameState): GameState => {
 const advanceTurn = (state: GameState): number =>
   (state.activePlayerIndex + 1) % state.players.length
 
-const award = (state: GameState, points: number): Player[] =>
+const award = (
+  state: GameState,
+  points: number,
+  playerIndex = state.activePlayerIndex,
+): Player[] =>
   state.players.map((player, index) =>
-    index === state.activePlayerIndex
+    index === playerIndex
       ? { ...player, score: player.score + points }
       : player,
   )
@@ -197,14 +201,37 @@ export const guessLetter = (state: GameState, rawLetter: string): GameState => {
   })
 }
 
-export const attemptSolve = (state: GameState, guess: string): GameState => {
+export const attemptSolve = (
+  state: GameState,
+  guess: string,
+  playerIndex = state.activePlayerIndex,
+): GameState => {
   if (state.phase !== 'playing') return state
+  if (!state.players[playerIndex]) return state
 
   if (normalizePhrase(guess) !== normalizePhrase(state.phrase)) {
+    const penalty = state.slots.filter(
+      (slot) => slot.isLetter && !slot.revealed,
+    ).length
+    const isActivePlayer = playerIndex === state.activePlayerIndex
+
     return remember(state, {
       ...state,
-      activePlayerIndex: advanceTurn(state),
-      lastOutcome: { kind: 'solve-failed' },
+      players: isActivePlayer
+        ? state.players
+        : state.players.map((player, index) =>
+            index === playerIndex
+              ? { ...player, score: player.score - penalty }
+              : player,
+          ),
+      activePlayerIndex: isActivePlayer
+        ? advanceTurn(state)
+        : state.activePlayerIndex,
+      lastOutcome: {
+        kind: 'solve-failed',
+        playerIndex,
+        penalty: isActivePlayer ? 0 : penalty,
+      },
     })
   }
 
@@ -216,9 +243,9 @@ export const attemptSolve = (state: GameState, guess: string): GameState => {
   return remember(state, {
     ...state,
     slots: state.slots.map((slot) => ({ ...slot, revealed: true })),
-    players: award(state, points),
+    players: award(state, points, playerIndex),
     phase: 'over',
-    solvedBy: state.activePlayerIndex,
+    solvedBy: playerIndex,
     lastOutcome: { kind: 'solved', points },
   })
 }
